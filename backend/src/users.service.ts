@@ -1,13 +1,14 @@
 import { Model } from 'mongoose';
 import { Injectable, OnModuleInit } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import { User } from './user.interface';
+import { Token } from './schemas/token.schema';
+import { User } from './schemas/user.schema';
 
 @Injectable()
 export class UsersService implements OnModuleInit {
   constructor(
     @InjectModel('User') private readonly userModel: Model<User>,
-    @InjectModel('Token') private readonly tokenModel: Model<any>,
+    @InjectModel('Token') private readonly tokenModel: Model<Token>,
   ) {}
 
   async onModuleInit() {
@@ -19,16 +20,12 @@ export class UsersService implements OnModuleInit {
     }
   }
 
-  async findAll(): Promise<User[]> {
-    return await this.userModel.find().exec();
-  }
-
   findOneByToken = async (token: string): Promise<User> => {
     const tokenModel = await this.tokenModel.findOne({token});
-    return this.userModel.findOneById(tokenModel.userId);
+    return this.userModel.findById(tokenModel.userId).exec();
   }
 
   findOneByEmail = (email: string): Promise<User> => {
-    return this.userModel.findOne({email});
+    return this.userModel.findOne({email}).exec();
   }
 }

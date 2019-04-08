@@ -3,12 +3,13 @@ import { UsersService } from './users.service';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { randomBytes } from 'crypto';
+import { Token } from './schemas/token.schema';
 
 @Injectable()
 export class AuthService {
   constructor(
     private readonly usersService: UsersService,
-    @InjectModel('Token') private readonly tokenModel: Model<any>,
+    @InjectModel('Token') private readonly tokenModel: Model<Token>,
   ) {}
   async passwordAuth(email: string, password: string): Promise<string> {
     const user = await this.usersService.findOneByEmail(email);
@@ -25,7 +26,7 @@ export class AuthService {
       await tokenModel.save();
       return token;
     } else {
-      throw new BadRequestException('Password is not match');
+      throw new BadRequestException('Password is not correct');
     }
   }
 

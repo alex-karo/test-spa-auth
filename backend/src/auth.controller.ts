@@ -3,6 +3,8 @@ import { AuthService } from './auth.service';
 import { Body } from '@nestjs/common/decorators/http/route-params.decorator';
 import { IsEmail, IsString } from 'class-validator';
 import { AuthGuard } from '@nestjs/passport';
+import { CurrentUser } from './current-user';
+import { User } from './schemas/user.schema';
 
 export class SignInPasswordDto {
   @IsEmail()
@@ -26,7 +28,11 @@ export class AuthController {
 
   @UseGuards(AuthGuard('bearer'))
   @Get('current')
-  getCurrentUser() {
-
+  getCurrentUser(@CurrentUser() user: User) {
+    const {email, name} = user;
+    return {
+      email,
+      name,
+    };
   }
 }

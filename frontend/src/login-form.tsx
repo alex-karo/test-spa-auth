@@ -3,16 +3,23 @@ import {
 } from 'antd';
 import React from 'react';
 import { FormComponentProps } from 'antd/lib/form';
+import { login } from './api';
 
 interface Props {
-
+  onSuccessfulLogin?: (token: string) => void;
 }
 
 function hasErrors(fieldsError) {
   return Object.keys(fieldsError).some(field => fieldsError[field]);
 }
 
-class HorizontalLoginForm extends React.Component<Props & FormComponentProps> {
+interface State {
+  globalError?: string;
+}
+
+class HorizontalLoginForm extends React.Component<Props & FormComponentProps, State> {
+  state: State = {};
+
   componentDidMount() {
     // To disabled submit button at the beginning.
     this.props.form.validateFields();
@@ -20,9 +27,17 @@ class HorizontalLoginForm extends React.Component<Props & FormComponentProps> {
 
   handleSubmit = (e) => {
     e.preventDefault();
-    this.props.form.validateFields((err, values) => {
+    this.setState({globalError: undefined});
+    this.props.form.validateFields(async (err, values) => {
       if (!err) {
-        console.log('Received values of form: ', values);
+        try {
+          const token = await login(values.email, values.password);
+          if (this.props.onSuccessfulLogin) {
+            this.props.onSuccessfulLogin(token);
+          }
+        } catch (e) {
+          this.setState({globalError: e.message});
+        }
       }
     });
   }
@@ -33,18 +48,18 @@ class HorizontalLoginForm extends React.Component<Props & FormComponentProps> {
     } = this.props.form;
 
     // Only show error after a field is touched.
-    const userNameError = isFieldTouched('userName') && getFieldError('userName');
+    const emailError = isFieldTouched('email') && getFieldError('email');
     const passwordError = isFieldTouched('password') && getFieldError('password');
     return (
       <Form layout="inline" onSubmit={this.handleSubmit}>
         <Form.Item
-          validateStatus={userNameError ? 'error' : ''}
-          help={userNameError || ''}
+          validateStatus={emailError ? 'error' : ''}
+          help={emailError || ''}
         >
-          {getFieldDecorator('userName', {
-            rules: [{required: true, message: 'Please input your username!'}],
+          {getFieldDecorator('email', {
+            rules: [{required: true, message: 'Please input your email!'}],
           })(
-            <Input prefix={<Icon type="user" style={{color: 'rgba(0,0,0,.25)'}}/>} placeholder="Username"/>
+            <Input prefix={<Icon type="mail" style={{color: 'rgba(0,0,0,.25)'}}/>} placeholder="Email"/>
           )}
         </Form.Item>
         <Form.Item
@@ -55,7 +70,7 @@ class HorizontalLoginForm extends React.Component<Props & FormComponentProps> {
             rules: [{required: true, message: 'Please input your password!'}],
           })(
             <Input prefix={<Icon type="lock" style={{color: 'rgba(0,0,0,.25)'}}/>} type="password"
-                   placeholder="Password"/>
+                   placeholder="password"/>
           )}
         </Form.Item>
         <Form.Item>
@@ -67,9 +82,15 @@ class HorizontalLoginForm extends React.Component<Props & FormComponentProps> {
             Log in
           </Button>
         </Form.Item>
+        {this.state.globalError ? <div style={{color: 'red'}}>{this.state.globalError}</div>   : null}
       </Form>
     );
   }
 }
 
-export const LoginForm = Form.create({name: 'login_form'})(HorizontalLoginForm);
+interface LoginForm extends FormComponentProps {
+  email: string;
+  password: string;
+}
+
+export const LoginForm = Form.create<LoginForm>({name: 'login_form'})(HorizontalLoginForm);
